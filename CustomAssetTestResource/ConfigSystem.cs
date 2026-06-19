@@ -39,7 +39,12 @@ public static class ConfigSystem
     /// <param name="fileName">
     /// The name of the embedded resource file to export.
     /// </param>
-    public static void ExportEmbeddedFile(string modName, string fileName)
+    /// <param name="overwritePredicate">
+    /// Delegate to decide overwrite behavior.  
+    /// Receives the target file path, returns true if the file should be overwritten.  
+    /// If null, defaults to skipping existing files.
+    /// </param>
+    public static void ExportEmbeddedFile(string modName, string fileName, Func<string, bool>? overwritePredicate = null)
     {
         try
         {
@@ -58,14 +63,17 @@ public static class ConfigSystem
                 return;
             }
 
-            if (!File.Exists(filePath))
+            bool shouldOverwrite = overwritePredicate?.Invoke(fileName) ?? false;
+
+            if (shouldOverwrite || !File.Exists(filePath))
             {
                 using var stream = asm.GetManifestResourceStream(resourceName);
                 using var reader = new StreamReader(stream);
                 File.WriteAllText(filePath, reader.ReadToEnd());
 
                 string relativeDir = Path.Combine("Config", modName);
-                Debug.Log($"[ConfigSystem] Exported embedded {fileName} to {relativeDir}");
+                Debug.Log($"[ConfigSystem] Exported embedded {fileName} to {relativeDir}" +
+                    (shouldOverwrite ? " (overwritten)" : ""));
             }
             else
             {
@@ -93,7 +101,12 @@ public static class ConfigSystem
     /// <param name="extensionFilter">
     /// Optional file extension filter (e.g., ".json"). Only resources ending with this extension will be exported.
     /// </param>
-    public static void ExportAllEmbeddedFile(string modName, string? extensionFilter = null)
+    /// <param name="overwritePredicate">
+    /// Delegate to decide overwrite behavior.  
+    /// Receives the target file path, returns true if the file should be overwritten.  
+    /// If null, defaults to skipping existing files.
+    /// </param>
+    public static void ExportAllEmbeddedFile(string modName, string? extensionFilter = null, Func<string, bool>? overwritePredicate = null)
     {
         try
         {
@@ -114,14 +127,17 @@ public static class ConfigSystem
 
                 string filePath = Path.Combine(modDir, fileName);
 
-                if (!File.Exists(filePath))
+                bool shouldOverwrite = overwritePredicate?.Invoke(fileName) ?? false;
+
+                if (shouldOverwrite || !File.Exists(filePath))
                 {
                     using var stream = asm.GetManifestResourceStream(res);
                     using var reader = new StreamReader(stream);
                     File.WriteAllText(filePath, reader.ReadToEnd());
 
                     string relativeDir = Path.Combine("Config", modName);
-                    Debug.Log($"[ConfigSystem] Exported embedded {fileName} to {relativeDir}");
+                    Debug.Log($"[ConfigSystem] Exported embedded {fileName} to {relativeDir}" +
+                        (shouldOverwrite ? " (overwritten)" : ""));
                 }
                 else
                 {
@@ -232,6 +248,67 @@ public static class ConfigSystem
         using var stream = asm.GetManifestResourceStream(resourceName);
         using var reader = new StreamReader(stream);
         return new TextAsset(reader.ReadToEnd());
+    }
+
+    /// <summary>
+    /// Gets the full file path in the Config directory for the given modName and fileName.
+    /// The modName supports both single-level and multi-level directories.
+    /// Ensures the mod directory exists, but does not create the file.
+    /// </summary>
+    /// <param name="modName">
+    /// The mod name. It can be a single-level directory ("MyMod")
+    /// or a multi-level directory ("MyMod/SubConfig").
+    /// Path separators inside the string are handled automatically by Path.Combine.
+    /// </param>
+    /// <param name="fileName">
+    /// The name of the external file to load.
+    /// </param>
+    public static string? GetFilePath(string modName, string fileName)
+    {
+        try
+        {
+            string? modDir = EnsureModDir(modName);
+            if (modDir == null) return null;
+
+            return Path.Combine(modDir, fileName);
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[ConfigSystem] Failed to get file path for {modName}/{fileName}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Creates an empty file in the specified mod directory and returns its full path.
+    /// The modName supports both single-level and multi-level directories.
+    /// If the file already exists, it will be cleared (overwritten with empty content).
+    /// </summary>
+    /// <param name="modName">
+    /// The mod name. It can be a single-level directory ("MyMod")
+    /// or a multi-level directory ("MyMod/SubConfig").
+    /// Path separators inside the string are handled automatically by Path.Combine.
+    /// </param>
+    /// <param name="fileName">
+    /// The name of the external file to load.
+    /// </param>
+    public static string? CreateEmptyFile(string modName, string fileName)
+    {
+        try
+        {
+            string? filePath = GetFilePath(modName, fileName);
+            if (filePath == null) return null;
+
+            using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write)){}
+
+            Debug.Log($"[ConfigSystem] Created empty file: {Path.Combine("Config", modName, fileName)}");
+            return filePath;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[ConfigSystem] Failed to create empty file {fileName}: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
