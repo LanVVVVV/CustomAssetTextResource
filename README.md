@@ -6,6 +6,7 @@ CustomAssetTestResource is a mod for **Monster Black Market** —— allow loadi
 
 * Export all available TextAssets from resources.assets into Config\CustomAssetTestResource\Export through mod settings.
 * Load JSON TextAssets from Config\CustomAssetTestResource to replace game data.
+* Output detailed diff logs to Config\CustomAssetTestResource\Log through mod settings.
 
 ### Notes
 

@@ -1,5 +1,7 @@
 ﻿using HarmonyLib;
 using MBMScripts;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,62 +10,69 @@ namespace CustomAssetTestResource.Features;
 
 public static class DatabaseReplace
 {
+    const string ModName = ModEntry.ModName;
+    const string Log = ModEntry.ModName + "/Log";
+    const string DiffFileName = "diff.log";
+
+    private static bool EnableDiff => ModConfig.EnableOutputDiffLog;
+
     public static void AllGameManagerDatabaseReplace()
     {
-        var modName = ModEntry.ModName;
+        if(EnableDiff)
+            JsonDiff.InitDiffFile(Log, DiffFileName);
 
-        ReplaceDatabase<ConfigData>(modName);
-        ReplaceDatabase<TraitData>(modName);
+        ReplaceDatabase<ConfigData>(ModName);
+        ReplaceDatabase<TraitData>(ModName);
 
-        ReplaceDatabase<HumanData>(modName);
-        ReplaceDatabase<ElfData>(modName);
-        ReplaceDatabase<DwarfData>(modName);
-        ReplaceDatabase<NekoData>(modName);
-        ReplaceDatabase<InuData>(modName);
-        ReplaceDatabase<UsagiData>(modName);
-        ReplaceDatabase<HitsujiData>(modName);
-        ReplaceDatabase<DragonianData>(modName);
+        ReplaceDatabase<HumanData>(ModName);
+        ReplaceDatabase<ElfData>(ModName);
+        ReplaceDatabase<DwarfData>(ModName);
+        ReplaceDatabase<NekoData>(ModName);
+        ReplaceDatabase<InuData>(ModName);
+        ReplaceDatabase<UsagiData>(ModName);
+        ReplaceDatabase<HitsujiData>(ModName);
+        ReplaceDatabase<DragonianData>(ModName);
 
-        ReplaceDatabase<SuccubusData>(modName);
+        ReplaceDatabase<SuccubusData>(ModName);
 
-        ReplaceDatabase<SylviaData>(modName);
-        ReplaceDatabase<ClaireData>(modName);
-        ReplaceDatabase<AureData>(modName);
-        ReplaceDatabase<KarenData>(modName);
-        ReplaceDatabase<ViviData>(modName);
-        ReplaceDatabase<BellaData>(modName);
-        ReplaceDatabase<AnnaData>(modName);
-        ReplaceDatabase<NeroData>(modName);
+        ReplaceDatabase<SylviaData>(ModName);
+        ReplaceDatabase<ClaireData>(ModName);
+        ReplaceDatabase<AureData>(ModName);
+        ReplaceDatabase<KarenData>(ModName);
+        ReplaceDatabase<ViviData>(ModName);
+        ReplaceDatabase<BellaData>(ModName);
+        ReplaceDatabase<AnnaData>(ModName);
+        ReplaceDatabase<NeroData>(ModName);
 
-        ReplaceDatabase<AmiliaData>(modName);
-        ReplaceDatabase<FloraData>(modName);
-        ReplaceDatabase<NielData>(modName);
-        ReplaceDatabase<SenaData>(modName);
-        ReplaceDatabase<LenaData>(modName);
-        ReplaceDatabase<BarbaraData>(modName);
+        ReplaceDatabase<AmiliaData>(ModName);
+        ReplaceDatabase<FloraData>(ModName);
+        ReplaceDatabase<NielData>(ModName);
+        ReplaceDatabase<SenaData>(ModName);
+        ReplaceDatabase<LenaData>(ModName);
+        ReplaceDatabase<BarbaraData>(ModName);
 
-        ReplaceDatabase<PlayerCharacterData>(modName);
-        ReplaceDatabase<ClientData>(modName);
-        ReplaceDatabase<HorseData>(modName);
+        ReplaceDatabase<PlayerCharacterData>(ModName);
+        ReplaceDatabase<ClientData>(ModName);
+        ReplaceDatabase<HorseData>(ModName);
 
-        ReplaceDatabase<GoblinData>(modName);
-        ReplaceDatabase<OrcData>(modName);
-        ReplaceDatabase<WerewolfData>(modName);
-        ReplaceDatabase<MinotaurData>(modName);
-        ReplaceDatabase<SalamanderData>(modName);
+        ReplaceDatabase<GoblinData>(ModName);
+        ReplaceDatabase<OrcData>(ModName);
+        ReplaceDatabase<WerewolfData>(ModName);
+        ReplaceDatabase<MinotaurData>(ModName);
+        ReplaceDatabase<SalamanderData>(ModName);
 
-        ReplaceDatabase<TentacleData>(modName);
+        ReplaceDatabase<TentacleData>(ModName);
 
         // Additional branches: Items, Events, Rooms, Achievements, etc.
-        ReplaceDatabase<ItemData>(modName);
-        ReplaceDatabase<EventData>(modName);
-        ReplaceDatabase<RoomData>(modName);
-        ReplaceDatabase<UpgradeData>(modName);
-        ReplaceDatabase<AchievementData>(modName);
-        ReplaceDatabase<LikeabilityData>(modName);
-        ReplaceDatabase<MakingData>(modName);
-        ReplaceDatabase<Niel1Data>(modName);
-        ReplaceDatabase<SpineData>(modName);
+        ReplaceDatabase<ItemData>(ModName);
+        ReplaceDatabase<EventData>(ModName);
+        ReplaceDatabase<RoomData>(ModName);
+        ReplaceDatabase<UpgradeData>(ModName);
+        ReplaceDatabase<AchievementData>(ModName);
+        ReplaceDatabase<LikeabilityData>(ModName);
+        ReplaceDatabase<MakingData>(ModName);
+        ReplaceDatabase<Niel1Data>(ModName);
+        ReplaceDatabase<SpineData>(ModName);
     }
 
     private static void ReplaceDatabase<T>(string modName) where T : Data
@@ -105,6 +114,11 @@ public static class DatabaseReplace
 
         try
         {
+            bool changed = CompareWithResources<T>(asset!, fileName);
+
+            if (!changed)
+                return false;
+
             wrapper = JsonUtility.FromJson<SeqJsonListWrapper<T>>(asset!.text);
             return wrapper != null;
         }
@@ -113,5 +127,37 @@ public static class DatabaseReplace
             ModEntry.LogError($"[ConfigSystem] Failed to parse {fileName}: {ex.Message}");
             return false;
         }
+    }
+
+    private static bool CompareWithResources<T>(TextAsset externalasset, string fileName) where T : Data
+    {
+        TextAsset? internalAsset = Resources.Load<TextAsset>(typeof(T).Name);
+        if (internalAsset == null)
+        {
+            ModEntry.LogWarning($"[Missing] {fileName} not found in Resources.");
+            return false;
+        }
+
+        string internalContent = UnwrapList(internalAsset.text);
+        string externalContent = UnwrapList(externalasset.text);
+
+        if (EnableDiff)
+            return JsonDiff.DiffJsonListAuto(internalContent, externalContent, fileName, Log, DiffFileName);
+        else
+            return internalContent == externalContent;
+    }
+
+    private static string UnwrapList(string json)
+    {
+        try
+        {
+            var jObj = JObject.Parse(json);
+            if (jObj.TryGetValue("list", out var token) && token is JArray arr)
+            {
+                return arr.ToString(Formatting.None);
+            }
+        }
+        catch{}
+        return json;
     }
 }

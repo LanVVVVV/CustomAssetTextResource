@@ -100,4 +100,7 @@
   <data name="Config_ExportAllResourcesTextAsset" xml:space="preserve">
     <value>Overwrite and export all TextAssets from resources.assets to the directory Config\CustomAssetTestResource\Export.</value>
   </data>
+  <data name="Config_OutputDiffLog" xml:space="preserve">
+    <value>On game startup, output diff logs between external JSON data and corresponding TextAsset in resources.assets to Config\CustomAssetTestResource\Log.</value>
+  </data>
 </root>

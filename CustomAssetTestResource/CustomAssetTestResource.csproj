@@ -4,7 +4,7 @@
     <TargetFramework>net481</TargetFramework>
     <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>
-    <Version>1.0.0.0</Version>
+    <Version>1.1.0.0</Version>
     <Authors>LanFengVVV</Authors>
     <Company>LanFengVVV </Company>
     <Description>$(AssemblyName) Mod for Monster Black Market, using MBM.ModLoader</Description>
@@ -22,6 +22,10 @@
     </Reference>
 	<Reference Include="0Harmony">
       <HintPath>$(MBM)\MBM.ModLoader\0Harmony.dll</HintPath>
+	  <Private>False</Private>
+	</Reference>
+	<Reference Include="Newtonsoft.Json">
+	  <HintPath>$(MBM)\MonsterBlackMarket_Data\Managed\Newtonsoft.Json.dll</HintPath>
 	  <Private>False</Private>
 	</Reference>
     <Reference Include="UnityEngine">

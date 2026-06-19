@@ -120,4 +120,7 @@
   <data name="Config_ExportAllResourcesTextAsset" xml:space="preserve">
     <value>覆盖地导出resources.assets内的所有TextAsset到目录Config\CustomAssetTestResource\Export。</value>
   </data>
+  <data name="Config_OutputDiffLog" xml:space="preserve">
+    <value>游戏启动时输出外置Json数据和对应resources.assets内TextAsset的对比日志到目录Config\CustomAssetTestResource\Log。</value>
+  </data>
 </root>

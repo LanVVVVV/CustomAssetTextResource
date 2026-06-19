@@ -68,5 +68,14 @@ namespace CustomAssetTestResource.Properties {
                 return ResourceManager.GetString("Config_ExportAllResourcesTextAsset", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   查找类似 On game startup, output diff logs between external JSON data and corresponding TextAsset in resources.assets to Config\CustomAssetTestResource\Log. 的本地化字符串。
+        /// </summary>
+        public static string Config_OutputDiffLog {
+            get {
+                return ResourceManager.GetString("Config_OutputDiffLog", resourceCulture);
+            }
+        }
     }
 }
