@@ -2,10 +2,10 @@
 using CustomAssetTextResource.Utils;
 using HarmonyLib;
 using MBMScripts;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using SystemExtensionLib.Systems;
 using UnityEngine;
 
 namespace CustomAssetTextResource.Features;
@@ -13,10 +13,72 @@ namespace CustomAssetTextResource.Features;
 public static class DatabaseReplace
 {
     const string ModName = ModEntry.ModName;
-    const string Log = ModEntry.ModName + "/Log";
     const string DiffFileName = "diff.log";
+    static readonly string Log = Path.Combine(ModEntry.ModName, "Log");
 
     private static bool EnableDiff => ModConfig.EnableOutputDiffLog;
+
+    public static void ExportAllResourcesTextAssetFile()
+    {
+        string export = Path.Combine(ModEntry.ModName, "Export");
+        string exportSpeciesData = Path.Combine(export, "Species");
+        string exportSlaveNPCData = Path.Combine(export, "SlaveNPC");
+        string exportNPCData = Path.Combine(export, "NPC");
+        string exportMaleData = Path.Combine(export, "Male");
+
+        ConfigSystem.ExportResourcesTextAssetFile(export, "ConfigData");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "TraitData");
+
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "HumanData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "ElfData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "DwarfData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "NekoData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "InuData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "UsagiData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "HitsujiData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "DragonianData");
+
+        ConfigSystem.ExportResourcesTextAssetFile(exportSpeciesData, "SuccubusData");
+
+        ConfigSystem.ExportResourcesTextAssetFile(exportSlaveNPCData, "SylviaData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSlaveNPCData, "ClaireData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSlaveNPCData, "AureData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSlaveNPCData, "KarenData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSlaveNPCData, "ViviData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSlaveNPCData, "BellaData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSlaveNPCData, "AnnaData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportSlaveNPCData, "NeroData");
+
+        ConfigSystem.ExportResourcesTextAssetFile(exportNPCData, "AmiliaData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportNPCData, "FloraData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportNPCData, "NielData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportNPCData, "SenaData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportNPCData, "LenaData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportNPCData, "BarbaraData");
+
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "PlayerCharacterData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "ClientData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "HorseData");
+
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "GoblinData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "OrcData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "WerewolfData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "MinotaurData");
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "SalamanderData");
+
+        ConfigSystem.ExportResourcesTextAssetFile(exportMaleData, "TentacleData");
+
+        // Additional branches: Items, Events, Rooms, Achievements, etc.
+        ConfigSystem.ExportResourcesTextAssetFile(export, "ItemData");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "EventData");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "RoomData");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "UpgradeData");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "AchievementData");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "LikeabilityData");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "MakingData");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "Niel1Data");
+        ConfigSystem.ExportResourcesTextAssetFile(export, "SpineData");
+    }
 
     public static void AllGameManagerDatabaseReplace()
     {
@@ -111,7 +173,7 @@ public static class DatabaseReplace
         wrapper = null;
         string fileName = typeof(T).Name + ".json";
 
-        if (!ConfigSystem.TryLoadExternalFile(modName, fileName, out var asset))
+        if (!ConfigSystem.TryLoadExternalConfig(modName, fileName, out var asset))
             return false;
 
         try
@@ -140,26 +202,12 @@ public static class DatabaseReplace
             return false;
         }
 
-        string internalContent = UnwrapList(internalAsset.text);
-        string externalContent = UnwrapList(externalasset.text);
+        string internalContent = JsonDiff.UnwrapList(internalAsset.text);
+        string externalContent = JsonDiff.UnwrapList(externalasset.text);
 
         if (EnableDiff)
             return JsonDiff.DiffJsonListAuto(internalContent, externalContent, fileName, Log, DiffFileName);
         else
             return internalContent == externalContent;
-    }
-
-    private static string UnwrapList(string json)
-    {
-        try
-        {
-            var jObj = JObject.Parse(json);
-            if (jObj.TryGetValue("list", out var token) && token is JArray arr)
-            {
-                return arr.ToString(Formatting.None);
-            }
-        }
-        catch{}
-        return json;
     }
 }

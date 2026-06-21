@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using SystemExtensionLib.Systems;
 
 namespace CustomAssetTextResource.Utils;
 
@@ -11,7 +12,7 @@ public static class JsonDiff
 {
     public static void InitDiffFile(string modName, string diffFileName)
     {
-        string? diffFilePath = ConfigSystem.CreateEmptyFile(modName, diffFileName);
+        string? diffFilePath = ConfigSystem.GetConfigPath(modName, diffFileName);
         if (diffFilePath == null) return;
 
         using (var writer = new StreamWriter(diffFilePath, append: false))
@@ -24,7 +25,7 @@ public static class JsonDiff
 
     public static bool DiffJsonListAuto(string internalJson, string externalJson, string fileName, string modName, string diffFileName)
     {
-        string? diffFilePath = ConfigSystem.GetFilePath(modName, diffFileName);
+        string? diffFilePath = ConfigSystem.GetConfigPath(modName, diffFileName);
         if (diffFilePath == null) return false;
 
         var internalList = ParseObjectList(internalJson);
@@ -39,7 +40,7 @@ public static class JsonDiff
             diffFileName = "SpineData_" + diffFileName;
             InitDiffFile(modName, diffFileName);
 
-            string? spineDiffPath = ConfigSystem.GetFilePath(modName, diffFileName);
+            string? spineDiffPath = ConfigSystem.GetConfigPath(modName, diffFileName);
             if (spineDiffPath == null) return false;
 
             changed = DiffSpineData(internalList, externalList, diffs);
@@ -68,6 +69,19 @@ public static class JsonDiff
 
         WriteDiffToFile(diffFilePath, diffs);
         return changed;
+    }
+    public static string UnwrapList(string json)
+    {
+        try
+        {
+            var jObj = JObject.Parse(json);
+            if (jObj.TryGetValue("list", out var token) && token is JArray arr)
+            {
+                return arr.ToString(Formatting.None);
+            }
+        }
+        catch { }
+        return json;
     }
 
     #region SpineData

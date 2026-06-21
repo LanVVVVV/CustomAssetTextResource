@@ -19,3 +19,4 @@ CustomAssetTextResource is a mod for **Monster Black Market** —— allow loadi
 | -------------------- | ---------- |
 | MBM.ModLoader        | ≥ 0.6.0    |
 | Monster Black Market | ≥ 2.1.2.0  |
+| SystemExtensionLib   | ≥ 1.0.0    | [GitHub](https://github.com/LanVVVVV/SystemExtensionLib) |
